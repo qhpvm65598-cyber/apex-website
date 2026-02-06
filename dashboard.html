@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apex Oil Company - Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #1B4F72 0%, #2E86AB 100%);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { font-size: 18px; font-weight: bold; }
+        .logout { background: rgba(255,255,255,0.2); padding: 8px 16px; border: none; border-radius: 8px; color: white; font-weight: bold; }
+        .container { padding: 15px; }
+        .welcome { color: #1B4F72; font-size: 24px; font-weight: bold; margin: 15px 0 5px 0; }
+        .email { color: #666; margin-bottom: 20px; }
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .stat-label { color: #666; font-size: 12px; margin-bottom: 5px; }
+        .stat-value { font-size: 28px; font-weight: bold; color: #1B4F72; }
+        .positive { color: #27AE60; }
+        .chart { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .chart-title { font-weight: bold; color: #1B4F72; margin-bottom: 15px; }
+        .chart-box { height: 200px; background: linear-gradient(to top right, #E8F8F5 0%, #fff 100%); border: 2px solid #27AE60; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .chart-icon { font-size: 50px; }
+        .chart-percent { font-size: 32px; font-weight: bold; color: #27AE60; }
+        .trades { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .trade-item { border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; }
+        .trade-item:last-child { border: none; }
+        .trade-date { font-size: 11px; color: #999; }
+        .trade-type { font-weight: bold; font-size: 13px; color: #1B4F72; margin: 3px 0; }
+        .trade-asset { font-size: 14px; color: #333; }
+        .trade-amount { font-size: 13px; color: #666; text-align: right; }
+        .trade-profit { font-size: 16px; font-weight: bold; color: #27AE60; text-align: right; }
+        .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn { padding: 15px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; }
+        .btn-green { background: #27AE60; color: white; }
+        .btn-blue { background: #1B4F72; color: white; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; padding: 20px; }
+        .modal.show { display: flex; }
+        .modal-box { background: white; padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; }
+        .modal-title { font-size: 20px; font-weight: bold; color: #1B4F72; margin-bottom: 15px; }
+        .modal input { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 15px; }
+        .fee-box { background: #FFF9E6; border-left: 4px solid #F39C12; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .close-btn { float: right; font-size: 30px; font-weight: bold; cursor: pointer; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🛢️ Apex Oil Company, Inc.</div>
+        <button class="logout" onclick="logout()">Logout</button>
+    </div>
+    
+    <div class="container">
+        <div class="welcome">Welcome Back!</div>
+        <div class="email" id="userEmail"></div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">BALANCE</div>
+                <div class="stat-value" id="balance">$0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">INVESTED</div>
+                <div class="stat-value" id="invested">$0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">PROFIT</div>
+                <div class="stat-value positive" id="profit">$0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">RETURN</div>
+                <div class="stat-value positive" id="return">0%</div>
+            </div>
+        </div>
+        
+        <div class="chart">
+            <div class="chart-title">Portfolio Growth</div>
+            <div class="chart-box">
+                <div class="chart-icon">📈</div>
+                <div class="chart-percent" id="chartPercent">+0%</div>
+            </div>
+        </div>
+        
+        <div class="trades">
+            <div class="chart-title">Recent Trades</div>
+            <div id="tradesList"></div>
+        </div>
+        
+        <div class="buttons">
+            <button class="btn btn-green" onclick="showWithdraw()">💰 Withdraw</button>
+            <button class="btn btn-blue" onclick="alert('Contact your account manager to add funds')">➕ Deposit</button>
+        </div>
+    </div>
+    
+    <div id="withdrawModal" class="modal">
+        <div class="modal-box">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div class="modal-title">Withdraw Funds</div>
+            <input type="number" id="amount" placeholder="Enter amount">
+            <button class="btn btn-green" style="width:100%" onclick="processWithdraw()">Request Withdrawal</button>
+        </div>
+    </div>
+    
+    <div id="feeModal" class="modal">
+        <div class="modal-box">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div class="modal-title">⚠️ Fee Required</div>
+            <div id="feeContent"></div>
+        </div>
+    </div>
+    
+    <script>
+        // ========== CUSTOMIZE HERE ==========
+        var INVESTMENT = 50000;
+        var RETURN_PERCENT = 25;
+        // ====================================
+        
+        var profit = INVESTMENT * (RETURN_PERCENT / 100);
+        var total = INVESTMENT + profit;
+        
+        window.onload = function() {
+            if (!localStorage.getItem('loggedIn')) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            document.getElementById('userEmail').textContent = localStorage.getItem('userEmail');
+            document.getElementById('invested').textContent = '$' + INVESTMENT.toLocaleString();
+            document.getElementById('profit').textContent = '$' + profit.toLocaleString();
+            document.getElementById('balance').textContent = '$' + total.toLocaleString();
+            document.getElementById('return').textContent = '+' + RETURN_PERCENT + '%';
+            document.getElementById('chartPercent').textContent = '+' + RETURN_PERCENT + '%';
+            
+            var trades = [
+                {date: 'Feb 5', type: 'BUY', asset: 'Crude Oil', amt: 15000, prof: 3750},
+                {date: 'Feb 4', type: 'SELL', asset: 'Brent Crude', amt: 20000, prof: 5000},
+                {date: 'Feb 3', type: 'BUY', asset: 'Natural Gas', amt: 10000, prof: 2500},
+                {date: 'Feb 2', type: 'SELL', asset: 'WTI Crude', amt: 18000, prof: 4500}
+            ];
+            
+            var list = document.getElementById('tradesList');
+            trades.forEach(function(t) {
+                var div = document.createElement('div');
+                div.className = 'trade-item';
+                div.innerHTML = '<div><div class="trade-date">' + t.date + '</div><div class="trade-type">' + t.type + '</div><div class="trade-asset">' + t.asset + '</div></div><div><div class="trade-amount">$' + t.amt.toLocaleString() + '</div><div class="trade-profit">+$' + t.prof.toLocaleString() + '</div></div>';
+                list.appendChild(div);
+            });
+        };
+        
+        function showWithdraw() {
+            document.getElementById('withdrawModal').classList.add('show');
+        }
+        
+        function closeModal() {
+            document.getElementById('withdrawModal').classList.remove('show');
+            document.getElementById('feeModal').classList.remove('show');
+        }
+        
+        function processWithdraw() {
+            var amt = document.getElementById('amount').value;
+            if (!amt || amt <= 0) { alert('Enter valid amount'); return; }
+            
+            var tax = (amt * 0.15).toFixed(0);
+            var fee = 500;
+            var totalFee = parseInt(tax) + fee;
+            
+            document.getElementById('withdrawModal').classList.remove('show');
+            document.getElementById('feeContent').innerHTML = '<p>Withdrawal: <b>$' + parseInt(amt).toLocaleString() + '</b></p><div class="fee-box"><p>Tax (15%): $' + parseInt(tax).toLocaleString() + '</p><p>Processing Fee: $500</p><hr style="margin:10px 0"><p><b>TOTAL FEE: $' + totalFee.toLocaleString() + '</b></p></div><p style="font-size:14px;color:#666">Wire the fee to process your withdrawal</p><button class="btn btn-blue" style="width:100%;margin-top:15px" onclick="closeModal()">Close</button>';
+            document.getElementById('feeModal').classList.add('show');
+        }
+        
+        function logout() {
+            if (confirm('Logout?')) {
+                localStorage.clear();
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
